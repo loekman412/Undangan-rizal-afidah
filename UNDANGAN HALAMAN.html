@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undangan Pernikahan Rizal & Af'ida</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #b39268;
+            --primary-dark: #8c714d;
+            --bg-color: #faf8f5;
+            --text-dark: #333333;
+            --text-light: #777777;
+            --white: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            overflow: hidden; 
+        }
+
+        h1, h2, .font-latin { font-family: 'Great Vibes', cursive; }
+
+        /* Latar Belakang Canvas Bunga Bergerak */
+        #dynamic-canvas {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1; pointer-events: none;
+        }
+
+        /* ==========================================
+           [BARU] BINGKAI ORNAMEN BUNGA DI PINGGIR LAYAR
+           ========================================== */
+        .floral-frame {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; /* Di atas canvas, di belakang kartu */
+            overflow: hidden;
+        }
+
+        .floral-corner {
+            position: absolute;
+            width: 170px;
+            height: 170px;
+            opacity: 0.85;
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.05));
+        }
+
+        /* Animasi ayunan ditiup angin untuk masing-masing sudut */
+        @keyframes swayTL { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(3deg); } }
+        @keyframes swayTR { 0%, 100% { transform: scaleX(-1) rotate(0deg); } 50% { transform: scaleX(-1) rotate(-3deg); } }
+        @keyframes swayBL { 0%, 100% { transform: scaleY(-1) rotate(0deg); } 50% { transform: scaleY(-1) rotate(-3deg); } }
+        @keyframes swayBR { 0%, 100% { transform: scale(-1, -1) rotate(0deg); } 50% { transform: scale(-1, -1) rotate(3deg); } }
+
+        .fc-tl { top: -15px; left: -15px; transform-origin: top left; animation: swayTL 7s ease-in-out infinite; }
+        .fc-tr { top: -15px; right: -15px; transform-origin: top right; animation: swayTR 8s ease-in-out infinite; }
+        .fc-bl { bottom: 65px; left: -15px; transform-origin: bottom left; animation: swayBL 7.5s ease-in-out infinite; }
+        .fc-br { bottom: 65px; right: -15px; transform-origin: bottom right; animation: swayBR 8.5s ease-in-out infinite; }
+
+        @media (max-width: 450px) {
+            .floral-corner { width: 130px; height: 130px; } /* Ukuran dikecilkan di HP */
+        }
+
+        /* ==========================================
+           HALAMAN COVER SLIDESHOW
+           ========================================== */
+        #cover-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: var(--white);
+            text-align: center; transition: transform 1.2s cubic-bezier(0.86, 0, 0.07, 1);
+            overflow: hidden;
+        }
+        .slideshow-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; }
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center; opacity: 0;
+            animation: fadeZoom 18s infinite;
+        }
+        .slide:nth-child(1) { animation-delay: 0s; }
+        .slide:nth-child(2) { animation-delay: 6s; }
+        .slide:nth-child(3) { animation-delay: 12s; }
+
+        @keyframes fadeZoom {
+            0%   { opacity: 0; transform: scale(1); }
+            10%  { opacity: 1; }
+            23%  { opacity: 1; }
+            33%  { opacity: 0; transform: scale(1.1); }
+            100% { opacity: 0; transform: scale(1.1); }
+        }
+
+        .cover-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)); z-index: -1;
+        }
+        .cover-content { z-index: 1; display: flex; flex-direction: column; align-items: center; }
+        .cover-subtitle { font-size: 0.9rem; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 10px; }
+        .cover-title { font-size: 5rem; color: #f5e6d3; margin-bottom: 30px; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+        .guest-box {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2); padding: 20px 30px;
+            border-radius: 15px; margin-bottom: 30px; min-width: 300px;
+        }
+        .guest-box p { font-size: 0.85rem; margin-bottom: 5px; color: #ddd; }
+        .guest-box h3 { font-size: 1.4rem; font-weight: 600; }
+        .btn-cover {
+            background: var(--primary-color); color: var(--white); padding: 12px 35px;
+            border-radius: 30px; font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer;
+            transition: 0.3s; box-shadow: 0 5px 15px rgba(179, 146, 104, 0.4); display: inline-flex; gap: 8px;
+        }
+        .btn-cover:hover { background: var(--primary-dark); transform: translateY(-3px); }
+
+        /* ==========================================
+           SISTEM HALAMAN TERPISAH (SPA)
+           ========================================== */
+        .page-container { display: none; padding-bottom: 100px; animation: fadeInPage 0.6s ease forwards; }
+        .page-container.active-page { display: block; }
+
+        @keyframes fadeInPage {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-wrapper { max-width: 650px; margin: 0 auto; padding: 40px 20px 0 20px; text-align: center; position: relative; z-index: 1; }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
+            border-radius: 20px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 30px; border: 1px solid #f0ece6;
+        }
+
+        .title-section { font-size: 3rem; color: var(--primary-color); margin-bottom: 15px; }
+        .subtitle-section { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-light); margin-bottom: 20px; }
+        .divider { width: 100%; height: 1px; background: linear-gradient(to right, transparent, var(--primary-color), transparent); margin: 30px 0; opacity: 0.3; }
+
+        /* ==========================================
+           NAVBAR BAWAH
+           ========================================== */
+        .bottom-nav {
+            position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 500px; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px); box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
+            border-top-left-radius: 20px; border-top-right-radius: 20px; display: flex;
+            justify-content: space-around; padding: 12px 10px 20px 10px; z-index: 1000;
+            transition: bottom 0.8s ease;
+        }
+        .nav-item {
+            color: var(--text-light); display: flex; flex-direction: column;
+            align-items: center; font-size: 0.7rem; transition: 0.3s; cursor: pointer;
+            border: none; background: transparent; font-family: inherit; outline: none;
+        }
+        .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
+        .nav-item:hover, .nav-item.active { color: var(--primary-color); }
+
+        .music-btn {
+            position: fixed; bottom: 90px; right: 20px; width: 45px; height: 45px;
+            background: var(--primary-color); color: white; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            z-index: 1001; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: none;
+            transition: 0.3s; opacity: 0; 
+        }
+        .music-btn.playing svg { animation: putar 4s linear infinite; }
+        @keyframes putar { 100% { transform: rotate(360deg); } }
+
+        /* Style Komponen Lain */
+        .mempelai-img { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid #fdfbf7; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .mempelai-name { font-size: 1.5rem; font-weight: 600; color: var(--text-dark); }
+        .mempelai-parent { font-size: 0.85rem; color: var(--text-light); margin-top: 5px; }
+        .ampersand { font-size: 3rem; color: var(--primary-color); margin: 20px 0; }
+        .btn-action { display: inline-block; background: var(--primary-color); color: white; padding: 10px 25px; border-radius: 25px; font-size: 0.85rem; margin-top: 15px; border: none; cursor: pointer; transition: 0.3s; text-decoration: none;}
+        .btn-action:hover { background: var(--primary-dark); }
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .gallery-item { width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .rek-box { background: var(--bg-color); border: 1px solid #f0ece6; border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; }
+        .rek-box p { font-size: 0.9rem; margin-bottom: 5px; }
+        .rek-num { font-size: 1.2rem; font-weight: 600; color: var(--primary-color); }
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit; font-size: 0.9rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); }
+        .wish-container { max-height: 300px; overflow-y: auto; text-align: left; margin-top: 20px; }
+        .wish-card { background: var(--bg-color); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; }
+        .wish-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; }
+        .badge.hadir { background: #d4edda; color: #155724; }
+        .badge.absen { background: #f8d7da; color: #721c24; }
+        footer { background: transparent; color: #aaa; padding: 20px; text-align: center; font-size: 0.8rem; margin-top: 20px;}
+    </style>
+</head>
+<body>
+
+    <!-- KANVAS BACKGROUND BUNGA BERGERAK -->
+    <canvas id="dynamic-canvas"></canvas>
+
+    <!-- [BARU] BINGKAI ORNAMEN BUNGA DI 4 SUDUT LAYAR -->
+    <div class="floral-frame">
+        <!-- SVG Master Ornamen Bunga (Kiri Atas) -->
+        <svg class="floral-corner fc-tl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0,0 Q 30,20 80,80" fill="none" stroke="var(--primary-color)" stroke-width="2" opacity="0.6"/>
+            <path d="M 0,0 Q 20,40 40,90" fill="none" stroke="var(--primary-color)" stroke-width="1.5" opacity="0.6"/>
+            <!-- Daun Lebar -->
+            <path d="M 0,0 C 30,0 50,15 50,45 C 15,50 0,30 0,0 Z" fill="var(--primary-color)" opacity="0.5"/>
+            <path d="M 0,0 C 0,30 15,50 45,50 C 50,15 30,0 0,0 Z" fill="var(--primary-dark)" opacity="0.4"/>
+            <!-- Daun Panjang -->
+            <path d="M 0,0 C 60,10 70,30 80,80 C 30,70 10,60 0,0 Z" fill="var(--primary-color)" opacity="0.6"/>
+            <!-- Bunga Mawar / Peony Utama -->
+            <g transform="translate(25, 20) scale(0.65)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-dark)"/>
+                <circle cx="30" cy="35" r="8" fill="#fff" opacity="0.5"/>
+                <circle cx="30" cy="35" r="4" fill="var(--primary-color)"/>
+            </g>
+            <!-- Bunga Mawar Kecil -->
+            <g transform="translate(60, 5) scale(0.4)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-color)"/>
+                <circle cx="30" cy="35" r="6" fill="#fff" opacity="0.5"/>
+            </g>
+        </svg>
+
+        <!-- Copy Ornamen untuk Kanan Atas -->
+        <svg class="floral-corner fc-tr" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0,0 Q 30,20 80,80" fill="none" stroke="var(--primary-color)" stroke-width="2" opacity="0.6"/>
+            <path d="M 0,0 Q 20,40 40,90" fill="none" stroke="var(--primary-color)" stroke-width="1.5" opacity="0.6"/>
+            <path d="M 0,0 C 30,0 50,15 50,45 C 15,50 0,30 0,0 Z" fill="var(--primary-color)" opacity="0.5"/>
+            <path d="M 0,0 C 0,30 15,50 45,50 C 50,15 30,0 0,0 Z" fill="var(--primary-dark)" opacity="0.4"/>
+            <path d="M 0,0 C 60,10 70,30 80,80 C 30,70 10,60 0,0 Z" fill="var(--primary-color)" opacity="0.6"/>
+            <g transform="translate(25, 20) scale(0.65)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-dark)"/>
+                <circle cx="30" cy="35" r="8" fill="#fff" opacity="0.5"/>
+                <circle cx="30" cy="35" r="4" fill="var(--primary-color)"/>
+            </g>
+            <g transform="translate(60, 5) scale(0.4)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-color)"/>
+                <circle cx="30" cy="35" r="6" fill="#fff" opacity="0.5"/>
+            </g>
+        </svg>
+
+        <!-- Copy Ornamen untuk Kiri Bawah -->
+        <svg class="floral-corner fc-bl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0,0 Q 30,20 80,80" fill="none" stroke="var(--primary-color)" stroke-width="2" opacity="0.6"/>
+            <path d="M 0,0 Q 20,40 40,90" fill="none" stroke="var(--primary-color)" stroke-width="1.5" opacity="0.6"/>
+            <path d="M 0,0 C 30,0 50,15 50,45 C 15,50 0,30 0,0 Z" fill="var(--primary-color)" opacity="0.5"/>
+            <path d="M 0,0 C 0,30 15,50 45,50 C 50,15 30,0 0,0 Z" fill="var(--primary-dark)" opacity="0.4"/>
+            <path d="M 0,0 C 60,10 70,30 80,80 C 30,70 10,60 0,0 Z" fill="var(--primary-color)" opacity="0.6"/>
+            <g transform="translate(25, 20) scale(0.65)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-dark)"/>
+                <circle cx="30" cy="35" r="8" fill="#fff" opacity="0.5"/>
+                <circle cx="30" cy="35" r="4" fill="var(--primary-color)"/>
+            </g>
+            <g transform="translate(60, 5) scale(0.4)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-color)"/>
+                <circle cx="30" cy="35" r="6" fill="#fff" opacity="0.5"/>
+            </g>
+        </svg>
+
+        <!-- Copy Ornamen untuk Kanan Bawah -->
+        <svg class="floral-corner fc-br" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0,0 Q 30,20 80,80" fill="none" stroke="var(--primary-color)" stroke-width="2" opacity="0.6"/>
+            <path d="M 0,0 Q 20,40 40,90" fill="none" stroke="var(--primary-color)" stroke-width="1.5" opacity="0.6"/>
+            <path d="M 0,0 C 30,0 50,15 50,45 C 15,50 0,30 0,0 Z" fill="var(--primary-color)" opacity="0.5"/>
+            <path d="M 0,0 C 0,30 15,50 45,50 C 50,15 30,0 0,0 Z" fill="var(--primary-dark)" opacity="0.4"/>
+            <path d="M 0,0 C 60,10 70,30 80,80 C 30,70 10,60 0,0 Z" fill="var(--primary-color)" opacity="0.6"/>
+            <g transform="translate(25, 20) scale(0.65)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-dark)"/>
+                <circle cx="30" cy="35" r="8" fill="#fff" opacity="0.5"/>
+                <circle cx="30" cy="35" r="4" fill="var(--primary-color)"/>
+            </g>
+            <g transform="translate(60, 5) scale(0.4)">
+                <path d="M 30,15 C 40,5 50,15 45,25 C 55,20 65,30 55,40 C 60,50 50,60 40,55 C 35,65 20,65 20,55 C 10,60 0,50 10,40 C 0,30 10,20 20,25 C 15,15 25,5 30,15 Z" fill="var(--primary-color)"/>
+                <circle cx="30" cy="35" r="6" fill="#fff" opacity="0.5"/>
+            </g>
+        </svg>
+    </div>
+
+    <audio id="bg-music" loop>
+        <source src="Muhammad_al_Muqit_-_Wedding_(mp3.pm).mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- HALAMAN COVER / SAMPUL -->
+    <div id="cover-screen">
+        <div class="slideshow-bg">
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=1200')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1519225495810-7512c696505a?q=80&w=1200')"></div>
+            <div class="cover-overlay"></div>
+        </div>
+
+        <div class="cover-content">
+            <p class="cover-subtitle">The Wedding Of</p>
+            <h1 class="cover-title">Rizal & Af'idah</h1>
+            
+            <div class="guest-box">
+                <p>Kepada Yth. Bpk/Ibu/Saudara/i:</p>
+                <h3 id="nama-tamu">Tamu Undangan</h3>
+            </div>
+
+            <button class="btn-cover" onclick="bukaUndangan()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22,3H2C0.9,3,0,3.9,0,5v14c0,1.1,0.9,2,2,2h20c1.1,0,2-0.9,2-2V5C24,3.9,23.1,3,22,3z M22,5l-10,6.2L2,5H22z M2,19V7.1 l9.5,5.9c0.3,0.2,0.7,0.2,1,0L22,7.1V19H2z"/></svg>
+                Buka Undangan
+            </button>
+        </div>
+    </div>
+
+    <button id="music-btn" class="music-btn" onclick="toggleMusik()">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/></svg>
+    </button>
+
+    <!-- NAVBAR BAWAH SEBAGAI PENGENDALI HALAMAN -->
+    <nav id="bottom-nav" class="bottom-nav">
+        <button class="nav-item active" onclick="pindahHalaman('halaman-home', this)">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
+        </button>
+        <button class="nav-item" onclick="pindahHalaman('halaman-mempelai', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>Mempelai
+        </button>
+        <button class="nav-item" onclick="pindahHalaman('halaman-acara', this)">
+            <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>Acara
+        </button>
+        <!-- <button class="nav-item" onclick="pindahHalaman('halaman-galeri', this)">
+            <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.53 3.15L17 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>Galeri
+        </button> -->
+        <button class="nav-item" onclick="pindahHalaman('halaman-ucapan', this)">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Ucapan
+        </button>
+    </nav>
+
+
+    <!-- ====================================
+         HALAMAN 1: HOME
+         ==================================== -->
+    <main id="halaman-home" class="page-container active-page">
+        <section class="section-wrapper">
+            <div class="card" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1519225495810-7512c696505a?q=80&w=600') center/cover; color: white; padding: 60px 20px;">
+                <p style="letter-spacing: 3px; font-size: 0.9rem;">SAVE THE DATE</p>
+                <h2 class="title-section" style="color: white; margin-top: 10px;">Rizal & Af'idah</h2>
+                <p>16 . 10 . 2026</p>
+            </div>
+            <div class="card" style="padding-top: 50px;">
+                <p class="font-latin" style="font-size: 2.2rem; color: var(--primary-color);">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</p>
+                <p style="font-size: 0.85rem; line-height: 1.8; margin-top: 15px; color: var(--text-light);">
+                    "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri..."
+                </p>
+                <p style="font-weight: 600; margin-top: 15px; font-size: 0.8rem; color: var(--primary-color);">( QS. Ar-Rum : 21 )</p>
+            </div>
+            <footer>Designed with ❤</footer>
+        </section>
+    </main>
+
+    <!-- ====================================
+         HALAMAN 2: MEMPELAI
+         ==================================== -->
+    <main id="halaman-mempelai" class="page-container">
+        <section class="section-wrapper">
+            <div class="card">
+                <p class="subtitle-section">Pasangan Bahagia</p>
+                <h2 class="title-section">Mempelai</h2>
+                <div class="divider"></div>
+                <div>
+                    <p class="mempelai-name">Ahmad Rizal Fanani</p>
+                    <p class="mempelai-parent">Putra dari Bpk. Sakemat & Ibu Nur Kholidah</p>
+                </div>
+                <div class="ampersand">&</div>
+                <div>
+                    <p class="mempelai-name">Dewi Rofiqotul Af'idah</p>
+                    <p class="mempelai-parent">Putri dari Bpk. Abdul Wahid & Ibu Akifatun</p>
+                </div>
+            </div>
+            <footer>Designed with ❤</footer>
+        </section>
+    </main>
+
+    <!-- ====================================
+         HALAMAN 3: ACARA
+         ==================================== -->
+    <main id="halaman-acara" class="page-container">
+        <section class="section-wrapper">
+            <div class="card">
+                <p class="subtitle-section">Hari Spesial</p>
+                <h2 class="title-section">Waktu & Tempat</h2>
+                <div class="divider"></div>
+                <h3 style="color: var(--text-dark); margin-bottom: 10px;">AKAD NIKAH</h3>
+                <p style="font-size: 0.9rem; color: var(--text-light);">Jumat, 16 Oktober 2026</p>
+                <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 15px;">08.00 WIB</p>
+                <p style="font-size: 0.9rem; font-weight: 500;">Dsn. Mayong Wetan, RT.001 RW.004</p>
+                <p style="font-size: 0.8rem; color: var(--text-light);">Ds. Mayong, Kec. Karangbinangun, Kab. Lamongan</p>
+                
+                <div class="divider"></div>
+
+                <h3 style="color: var(--text-dark); margin-bottom: 10px;">RESEPSI</h3>
+                <p style="font-size: 0.9rem; color: var(--text-light);">Jumat - Sabtu<br> 16 - 17 Oktober 2026</p>
+                <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 15px;">Siang - Malam</p>
+                <p style="font-size: 0.9rem; font-weight: 500;">Dsn. Mayong Kulon, RT.001 RW.001</p>
+                <p style="font-size: 0.8rem; color: var(--+text-light);">Ds. Mayong, Kec. Karangbinangun, Kab. Lamongan</p>
+
+                <a href="https://maps.app.goo.gl/yTq2cNP2GYbxMn9y8" target="_blank" class="btn-action" style="margin-top: 25px;">Lihat Denah Lokasi</a>
+            </div>
+            <footer>Designed with ❤</footer>
+        </section>
+    </main>
+
+    <!-- ====================================
+         HALAMAN 4: GALERI
+         ==================================== -->
+    <!--<main id="halaman-galeri" class="page-container">
+        <section class="section-wrapper">
+            <div class="card">
+                <p class="subtitle-section">Momen Indah</p>
+                <h2 class="title-section">Galeri</h2>
+                <div class="divider"></div>
+                <div class="gallery-grid">
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=400" alt="G1"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=400" alt="G2"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400" alt="G3"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=400" alt="G4"></div>
+                </div>
+            </div>
+            <footer>Designed with ❤</footer>
+        </section>
+    </main> -->
+
+    <!-- ====================================
+         HALAMAN 5: UCAPAN & GIFT
+         ==================================== -->
+    <main id="halaman-ucapan" class="page-container">
+        <section class="section-wrapper">
+            <div class="card">
+                <p class="subtitle-section">Kirim Tanda Kasih</p>
+                <h2 class="title-section">Amplop Digital</h2>
+                <div class="rek-box">
+                    <p>Bank BCA</p>
+                    <p class="rek-num">1234567890</p>
+                    <p style="font-size: 0.8rem; color: var(--text-light);">A.N Achmad Rizal Fanani</p>
+                    <button class="btn-action" style="padding: 5px 15px; font-size: 0.75rem;" onclick="salinNomor('1234567890', this)">Salin Rekening</button>
+                </div>
+                <div class="rek-box">
+                    <p>Bank Mandiri</p>
+                    <p class="rek-num">0987654321</p>
+                    <p style="font-size: 0.8rem; color: var(--text-light);">A.N Dewi Rofiqotul Af'idah</p>
+                    <button class="btn-action" style="padding: 5px 15px; font-size: 0.75rem;" onclick="salinNomor('0987654321', this)">Salin Rekening</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <p class="subtitle-section">Kehadiran & Doa</p>
+                <h2 class="title-section">RSVP</h2>
+                <div class="divider"></div>
+                <form id="form-rsvp" onsubmit="kirimUcapan(event)">
+                    <input type="text" id="rsvp-nama" placeholder="Nama Anda" required>
+                    <select id="rsvp-hadir" required>
+                        <option value="" disabled selected>Konfirmasi Kehadiran</option>
+                        <option value="Hadir">Berkenan Hadir</option>
+                        <option value="Absen">Maaf, Tidak Bisa Hadir</option>
+                    </select>
+                    <textarea id="rsvp-pesan" rows="4" placeholder="Berikan ucapan atau doa restu..." required></textarea>
+                    <button type="submit" class="btn-action" style="width: 100%;">Kirim Ucapan</button>
+                </form>
+                <div class="wish-container" id="daftar-ucapan">
+                    <div class="wish-card">
+                        <div class="wish-header">
+                            <strong>UNDGN</strong>
+                            <span class="badge hadir">Hadir</span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: var(--text-light);">May your marriage be filled with love and joy.</p>
+                    </div>
+                </div>
+            </div>
+            <footer>Designed with ❤</footer>
+        </section>
+    </main>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // 1. Nama Tamu
+        const urlParams = new URLSearchParams(window.location.search);
+        const namaTamu = urlParams.get('to');
+        if (namaTamu) { document.getElementById('nama-tamu').innerText = decodeURIComponent(namaTamu); }
+
+        const lagu = document.getElementById('bg-music');
+        const musicBtn = document.getElementById('music-btn');
+        let isPlaying = false;
+
+        // 2. Buka Undangan
+        function bukaUndangan() {
+            document.getElementById('cover-screen').style.transform = 'translateY(-100vh)';
+            document.body.style.overflow = 'auto';
+            document.getElementById('bottom-nav').style.bottom = '0';
+            musicBtn.style.opacity = '1';
+
+            lagu.play().catch(e => console.log('Autoplay dicegah browser'));
+            isPlaying = true;
+            musicBtn.classList.add('playing');
+        }
+
+        function toggleMusik() {
+            if (isPlaying) {
+                lagu.pause();
+                musicBtn.classList.remove('playing');
+            } else {
+                lagu.play();
+                musicBtn.classList.add('playing');
+            }
+            isPlaying = !isPlaying;
+        }
+
+        // 3. Pindah Halaman (Tabbed SPA)
+        function pindahHalaman(idHalamanTarget, elemenTombolKlik) {
+            const semuaHalaman = document.querySelectorAll('.page-container');
+            semuaHalaman.forEach(halaman => halaman.classList.remove('active-page'));
+
+            const halamanTujuan = document.getElementById(idHalamanTarget);
+            halamanTujuan.classList.add('active-page');
+
+            const semuaTombolNav = document.querySelectorAll('.nav-item');
+            semuaTombolNav.forEach(tombol => tombol.classList.remove('active'));
+            elemenTombolKlik.classList.add('active');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 4. Salin Rekening
+        function salinNomor(nomor, tombol) {
+            const teksAsli = tombol.innerText;
+            const areaTeks = document.createElement('textarea');
+            areaTeks.value = nomor;
+            areaTeks.style.position = 'absolute'; areaTeks.style.left = '-9999px';
+            document.body.appendChild(areaTeks); areaTeks.select();
+            try {
+                document.execCommand('copy');
+                tombol.innerText = "Tersalin ✓";
+                tombol.style.background = "#28a745"; 
+                setTimeout(() => {
+                    tombol.innerText = teksAsli;
+                    tombol.style.background = "var(--primary-color)";
+                }, 2000);
+            } catch (err) { alert('Gagal menyalin.'); }
+            document.body.removeChild(areaTeks);
+        }
+
+        // 5. Submit RSVP
+        function kirimUcapan(e) {
+            e.preventDefault();
+            const nama = document.getElementById('rsvp-nama').value;
+            const hadir = document.getElementById('rsvp-hadir').value;
+            const pesan = document.getElementById('rsvp-pesan').value;
+            
+            const badgeClass = hadir === 'Hadir' ? 'hadir' : 'absen';
+            
+            const htmlBaru = `
+                <div class="wish-card" style="animation: fadeInPage 0.5s ease;">
+                    <div class="wish-header">
+                        <strong>${nama}</strong>
+                        <span class="badge ${badgeClass}">${hadir}</span>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-light);">${pesan}</p>
+                </div>
+            `;
+            
+            const container = document.getElementById('daftar-ucapan');
+            container.insertAdjacentHTML('afterbegin', htmlBaru);
+            document.getElementById('form-rsvp').reset();
+        }
+
+        // =========================================================
+        // 6. ANIMASI KANVAS: BUNGA & KELOPAK EMAS BERGUGURAN
+        // =========================================================
+        const canvas = document.getElementById('dynamic-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() { 
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight; 
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const partikelArray = [];
+        
+        class OrnamenBunga {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.size = Math.random() * 5 + 3; 
+                this.speedY = Math.random() * 1.5 + 0.5; 
+                this.angle = Math.random() * 360; 
+                this.spin = (Math.random() - 0.5) * 2; 
+                this.opacity = Math.random() * 0.4 + 0.15;
+                this.type = Math.random() > 0.3 ? 'kelopak' : 'bunga'; 
+                this.drift = Math.random() * Math.PI * 2; 
+            }
+            
+            update() {
+                this.y += this.speedY; 
+                this.drift += 0.015; 
+                this.x += Math.sin(this.drift) * 0.6; 
+                this.angle += this.spin; 
+                
+                if (this.y > canvas.height + 20) {
+                    this.y = -20;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            
+            gambar() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle * Math.PI / 180);
+                
+                if (this.type === 'bunga') {
+                    ctx.fillStyle = `rgba(179, 146, 104, ${this.opacity})`;
+                    for (let i = 0; i < 5; i++) {
+                        ctx.beginPath();
+                        ctx.ellipse(0, -this.size, this.size/1.5, this.size, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.rotate((72 * Math.PI) / 180); 
+                    }
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size/2, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(212, 175, 55, ${this.opacity + 0.2})`;
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = `rgba(179, 146, 104, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, this.size * 1.2, this.size / 1.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        function inisialisasiPartikel() { 
+            for (let i = 0; i < 40; i++) {
+                partikelArray.push(new OrnamenBunga()); 
+            }
+        }
+
+        function animasiCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            partikelArray.forEach(p => { 
+                p.update(); 
+                p.gambar(); 
+            });
+            requestAnimationFrame(animasiCanvas);
+        }
+        
+        inisialisasiPartikel(); 
+        animasiCanvas();
+    </script>
+</body>
+</html>
